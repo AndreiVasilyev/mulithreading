@@ -1,9 +1,12 @@
 package by.epam.jwdmultithreading.entity;
 
 import by.epam.jwdmultithreading.util.IdGenerator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Truck implements Runnable {
 
+    private static final Logger log = LogManager.getLogger();
     private final int id;
     private int arrivalNumber;
     private boolean isPriorityPermission;
@@ -45,8 +48,12 @@ public class Truck implements Runnable {
 
     @Override
     public void run() {
+        log.info("Truck #{} arrive in Logistic hub", id);
         LogisticHub hub = LogisticHub.getInstance();
-        hub.takeArrivedTruck(this);
+        Terminal terminal = hub.getAvailableTerminal(this);
+        log.info("Truck #{} (arrival #{} permission:{}) get terminal #{}", id, arrivalNumber, isPriorityPermission, terminal.getId());
+        terminal.handleTruck(this);
+        log.info("Truck #{} left Logistic hub", id);
     }
 
     @Override

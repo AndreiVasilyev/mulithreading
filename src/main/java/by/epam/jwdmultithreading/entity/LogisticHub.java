@@ -4,10 +4,7 @@ import by.epam.jwdmultithreading.util.IdGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -21,25 +18,38 @@ public class LogisticHub {
     private final int DEFAULT_HUB_CAPACITY = 1_500_000_000;
     private final int DEFAULT_TERMINALS_QUANTITY = 4;
     private final int DEFAULT_CURRENT_HUB_LOAD = 500_000_000;
+    private final String RESOURCES_FILE_NAME = "hub";
+    private final String CAPACITY_PROPERTY_NAME = "hub.capacity";
+    private final String TERMINALS_QUANTITY_PROPERTY_NAME = "hub.terminalsQuantity";
+    private final String CURRENT_HUB_LOAD_PROPERTY_NAME = "hub.currentHubLoad";
 
     private static LogisticHub instance;
-    private static ReentrantLock lock = new ReentrantLock(true);
+    public static ReentrantLock lock = new ReentrantLock(true);
     private Condition turnQueueCondition;
 
     private int hubWeightCapacity;
     private int currentHubLoad;
+    private int terminalsQuantity;
     private Queue<Terminal> terminals;
     private Queue<Truck> trucksQueue;
     private Truck nextTruck;
 
     private LogisticHub() {
-        this.hubWeightCapacity = DEFAULT_HUB_CAPACITY;
-        this.currentHubLoad = DEFAULT_CURRENT_HUB_LOAD;
+        ResourceBundle bundle = ResourceBundle.getBundle(RESOURCES_FILE_NAME);
+        this.hubWeightCapacity = bundle.containsKey(CAPACITY_PROPERTY_NAME)
+                ? Integer.parseInt(bundle.getString(CAPACITY_PROPERTY_NAME))
+                : DEFAULT_HUB_CAPACITY;
+        this.currentHubLoad = bundle.containsKey(CURRENT_HUB_LOAD_PROPERTY_NAME)
+                ? Integer.parseInt(bundle.getString(CURRENT_HUB_LOAD_PROPERTY_NAME))
+                : DEFAULT_CURRENT_HUB_LOAD;
+        this.terminalsQuantity = bundle.containsKey(TERMINALS_QUANTITY_PROPERTY_NAME)
+                ? Integer.parseInt(bundle.getString(TERMINALS_QUANTITY_PROPERTY_NAME))
+                : DEFAULT_TERMINALS_QUANTITY;
         this.trucksQueue = new PriorityQueue<Truck>(Comparator.comparing(Truck::isPriorityPermission)
                 .reversed()
                 .thenComparing(Truck::getArrivalNumber));
         this.terminals = Stream.generate(Terminal::new)
-                .limit(DEFAULT_TERMINALS_QUANTITY)
+                .limit(terminalsQuantity)
                 .collect(Collectors.toCollection(() -> new LinkedList<>()));
         this.turnQueueCondition = lock.newCondition();
     }
@@ -58,20 +68,12 @@ public class LogisticHub {
         return instance;
     }
 
-    public static ReentrantLock getLock() {
-        return lock;
-    }
-
     public Condition getTurnQueueCondition() {
         return turnQueueCondition;
     }
 
     public int getHubWeightCapacity() {
         return hubWeightCapacity;
-    }
-
-    public void setHubWeightCapacity(int hubWeightCapacity) {
-        this.hubWeightCapacity = hubWeightCapacity;
     }
 
     public int getCurrentHubLoad() {
@@ -92,14 +94,6 @@ public class LogisticHub {
 
     public boolean addTerminal(Terminal terminal) {
         return terminals.add(terminal);
-    }
-
-    public Queue<Truck> getTrucksQueue() {
-        return trucksQueue;
-    }
-
-    public void setTrucksQueue(Queue<Truck> trucksQueue) {
-        this.trucksQueue = trucksQueue;
     }
 
     public Terminal getAvailableTerminal(Truck truck) {

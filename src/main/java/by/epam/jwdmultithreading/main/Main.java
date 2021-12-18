@@ -19,5 +19,6 @@ public class Main {
         executorService.execute(new Thread(new Truck(true, 80)));
         executorService.execute(new Thread(new Truck(false, 20)));
         executorService.shutdown();
+
     }
 }

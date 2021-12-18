@@ -34,10 +34,6 @@ public class Truck implements Runnable {
         return isPriorityPermission;
     }
 
-    public void setPriorityPermission(boolean priorityPermission) {
-        isPriorityPermission = priorityPermission;
-    }
-
     public int getCargoWeight() {
         return cargoWeight;
     }
